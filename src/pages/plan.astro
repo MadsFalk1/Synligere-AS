@@ -29,9 +29,9 @@ const cards = [
 	<section class="mx-auto w-full max-w-lg px-4 py-10">
 		<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#b56449]">Plan</p>
 		<h1 class="mt-2 text-3xl font-bold tracking-tight text-[#1a1a1a]">Plan for oss 💛</h1>
-		<div class="mt-6 grid gap-4">
-			{cards.map((card) => (
-				<article class="rounded-3xl border border-[#24140f]/10 bg-white p-5 shadow-[0_14px_32px_-26px_rgba(52,34,24,0.45)]">
+		<div id="plan-cards" class="mt-6 grid gap-4">
+			{cards.map((card, index) => (
+				<article data-card-index={index} class="plan-card rounded-3xl border border-[#24140f]/10 bg-white p-5 opacity-0 translate-y-4 shadow-[0_14px_32px_-26px_rgba(52,34,24,0.45)] transition duration-500 ease-out">
 					<p class="text-2xl">{card.emoji}</p>
 					<h2 class="mt-2 text-lg font-semibold text-[#1f1a17]">{card.title}</h2>
 					<p class="mt-1 text-sm leading-relaxed text-[#4d433e]">{card.text}</p>
@@ -40,3 +40,12 @@ const cards = [
 		</div>
 	</section>
 </BaseLayout>
+
+<script>
+	const cards = document.querySelectorAll('.plan-card');
+	cards.forEach((card, index) => {
+		setTimeout(() => {
+			card.classList.remove('opacity-0', 'translate-y-4');
+		}, 220 * index);
+	});
+</script>
