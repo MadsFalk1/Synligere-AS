@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Minigame | Synligere" description="Stav ELSKER DEG i et enkelt minigame.">
+	<section class="mx-auto w-full max-w-lg px-4 py-10">
+		<div class="rounded-3xl border border-[#24140f]/10 bg-white p-6 shadow-[0_14px_32px_-26px_rgba(52,34,24,0.45)] sm:p-8">
+			<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#b56449]">Minigame</p>
+			<h1 class="mt-2 text-2xl font-bold tracking-tight text-[#1a1a1a] sm:text-3xl">Stav «ELSKER DEG»</h1>
+			<div id="minigame-app" class="mt-6"></div>
+		</div>
+	</section>
+</BaseLayout>
+
+<script>
+	const target = 'ELSKER DEG';
+	const letters = ['E', 'L', 'S', 'K', 'R', 'D', 'G', 'A', 'B', 'C', 'F', 'H', 'I', 'J', 'M', 'N', 'O', 'P', 'T', 'U'];
+	const app = document.getElementById('minigame-app');
+
+	if (!app) {
+		throw new Error('Minigame container mangler.');
+	}
+
+	let progress = '';
+	let gaveUp = false;
+	let shake = false;
+
+	const progressSlots = () =>
+		target
+			.split('')
+			.map((char, index) => {
+				if (char === ' ') {
+					return '/';
+				}
+				return progress[index] ? char : '_';
+			})
+			.join(' ');
+
+	const isComplete = () => progress === target;
+
+	const render = () => {
+		const status = gaveUp
+			? `<div class="space-y-4 rounded-2xl border border-[#24140f]/10 bg-[#fff7f3] p-5 text-center">
+				<p class="text-lg font-semibold text-[#2a1b16]">Du ga opp 💛</p>
+				<p class="text-sm text-[#4d433e]">Riktig svar: <span class="font-bold">${target}</span></p>
+				<button id="continue-btn" class="w-full rounded-2xl bg-[#ffb199] py-4 text-lg font-semibold text-[#2f1e18] transition hover:bg-[#ffc3af]">Fortsett</button>
+			</div>`
+			: isComplete()
+				? `<div class="space-y-4 rounded-2xl border border-[#24140f]/10 bg-[#effcf4] p-5 text-center">
+					<p class="text-lg font-semibold text-[#175b37]">Du klarte det! 🎉</p>
+					<p class="text-sm text-[#2f4b3d]">Du stavet ${target} riktig.</p>
+					<button id="continue-btn" class="w-full rounded-2xl bg-[#ffb199] py-4 text-lg font-semibold text-[#2f1e18] transition hover:bg-[#ffc3af]">Fortsett</button>
+				</div>`
+				: `
+					<p class="text-sm font-semibold uppercase tracking-[0.16em] text-[#8f4b35]">Progresjon</p>
+					<p id="progress" class="mt-2 rounded-2xl border border-[#24140f]/10 bg-[#fffaf7] px-4 py-5 text-center font-mono text-xl tracking-[0.35em] text-[#2a1b16] ${shake ? 'animate-[wiggle_220ms_ease-in-out]' : ''}">${progressSlots()}</p>
+					<div class="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+						${letters
+							.map(
+								(letter) =>
+									`<button data-letter="${letter}" class="letter-btn w-full rounded-2xl border border-[#24140f]/15 bg-white py-4 text-lg font-semibold text-[#2a1b16] transition hover:border-[#ffb199] hover:bg-[#fff1eb]">${letter}</button>`,
+							)
+							.join('')}
+					</div>
+					<div class="mt-5 grid grid-cols-2 gap-3">
+						<button id="undo-btn" class="w-full rounded-2xl border border-[#24140f]/15 bg-white py-4 text-lg font-semibold text-[#2a1b16] transition hover:bg-[#fff1eb]" ${progress.length === 0 ? 'disabled' : ''}>Angre</button>
+						<button id="give-up-btn" class="w-full rounded-2xl bg-[#2a1b16] py-4 text-lg font-semibold text-[#fffaf7] transition hover:bg-[#3b2720]">Gi opp</button>
+					</div>
+				`;
+
+		app.innerHTML = `<div>${status}</div>`;
+
+		const continueBtn = app.querySelector('#continue-btn');
+		continueBtn?.addEventListener('click', () => {
+			window.location.href = '/plan';
+		});
+
+		app.querySelectorAll('.letter-btn').forEach((button) => {
+			button.addEventListener('click', () => {
+				if (gaveUp || isComplete()) {
+					return;
+				}
+
+				const letter = button.getAttribute('data-letter') || '';
+				const expected = target[progress.length];
+				if (letter === expected) {
+					progress += letter;
+					shake = false;
+				} else {
+					shake = true;
+					setTimeout(() => {
+						shake = false;
+						render();
+					}, 240);
+				}
+				render();
+			});
+		});
+
+		app.querySelector('#undo-btn')?.addEventListener('click', () => {
+			if (progress.length > 0) {
+				progress = progress.slice(0, -1);
+				render();
+			}
+		});
+
+		app.querySelector('#give-up-btn')?.addEventListener('click', () => {
+			gaveUp = true;
+			render();
+		});
+	};
+
+	render();
+</script>
+
+<style>
+	@keyframes wiggle {
+		0%,
+		100% {
+			transform: translateX(0);
+		}
+		25% {
+			transform: translateX(-6px);
+		}
+		75% {
+			transform: translateX(6px);
+		}
+	}
+</style>
