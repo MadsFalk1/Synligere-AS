@@ -1,0 +1,44 @@
+---
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = 'Synligere | Markedsføringsbyrå med premium uttrykk',
+	description = 'Synligere er et moderne markedsføringsbyrå ledet av Aurora Hegland. Vi leverer strategi, innhold, annonser og SEO som gir målbar vekst.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="no">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+		<meta name="description" content={description} />
+		<meta name="generator" content={Astro.generator} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<title>{title}</title>
+	</head>
+	<body class="min-h-screen bg-[#fffaf7] text-[#1a1a1a] antialiased selection:bg-[#ffb199]/70 selection:text-[#1f120e]">
+		<div class="relative min-h-screen overflow-x-clip bg-[radial-gradient(circle_at_top,_#ffe7df_0,_#fffaf7_35%,_#ffffff_100%)]">
+			<div class="pointer-events-none absolute inset-x-0 top-0 h-[22rem] bg-[radial-gradient(circle,_rgba(255,177,153,0.35),transparent_72%)]"></div>
+			<Navbar />
+			<main class="relative z-10 mx-auto w-full max-w-6xl px-4 pt-12 sm:px-6 lg:px-8">
+				<slot />
+			</main>
+			<Footer />
+		</div>
+	</body>
+</html>

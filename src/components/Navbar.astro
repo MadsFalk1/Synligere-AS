@@ -1,0 +1,78 @@
+---
+const currentPath = Astro.url.pathname;
+
+const links = [
+	{ href: '/', label: 'Hjem' },
+	{ href: '/om-oss', label: 'Om oss' },
+	{ href: '/kontakt-oss', label: 'Kontakt oss' },
+];
+
+const isActive = (href: string) => currentPath === href;
+---
+
+<header class="sticky top-0 z-50 border-b border-[#24140f]/10 bg-[#fffaf7]/90 backdrop-blur-xl">
+	<nav class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8" aria-label="Hovednavigasjon">
+		<a href="/" class="rounded-full px-3 py-2 text-lg font-semibold tracking-tight text-[#1f1a17] transition hover:text-[#d97f61] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb199] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaf7]">
+			Synligere
+		</a>
+
+		<ul class="hidden items-center gap-2 md:flex">
+			{links.map((link) => (
+				<li>
+					<a
+						href={link.href}
+						class={`rounded-full px-4 py-2 text-sm font-medium transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb199] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaf7] ${isActive(link.href)
+							? 'bg-[#ffb199]/25 text-[#2a1b16]'
+							: 'text-[#3f3530] hover:bg-[#ffb199]/15 hover:text-[#1a1a1a]'}`}
+					>
+						{link.label}
+					</a>
+				</li>
+			))}
+		</ul>
+
+		<button
+			id="menu-toggle"
+			type="button"
+			class="inline-flex items-center justify-center rounded-full border border-[#24140f]/20 p-2 text-[#2a1b16] transition hover:border-[#ffb199] hover:text-[#d97f61] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb199] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaf7] md:hidden"
+			aria-label="Åpne meny"
+			aria-expanded="false"
+			aria-controls="mobile-menu"
+		>
+			<svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+			</svg>
+		</button>
+	</nav>
+
+	<div id="mobile-menu" class="hidden border-t border-[#24140f]/10 px-4 pb-4 pt-2 md:hidden">
+		<ul class="space-y-1">
+			{links.map((link) => (
+				<li>
+					<a
+						href={link.href}
+						class={`block rounded-xl px-4 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffb199] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaf7] ${isActive(link.href)
+							? 'bg-[#ffb199]/25 text-[#2a1b16]'
+							: 'text-[#3f3530] hover:bg-[#ffb199]/15 hover:text-[#1a1a1a]'}`}
+					>
+						{link.label}
+					</a>
+				</li>
+			))}
+		</ul>
+	</div>
+</header>
+
+<script>
+	const menuToggle = document.getElementById('menu-toggle');
+	const mobileMenu = document.getElementById('mobile-menu');
+
+	if (menuToggle && mobileMenu) {
+		menuToggle.addEventListener('click', () => {
+			const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+			menuToggle.setAttribute('aria-expanded', String(!isExpanded));
+			menuToggle.setAttribute('aria-label', isExpanded ? 'Åpne meny' : 'Lukk meny');
+			mobileMenu.classList.toggle('hidden');
+		});
+	}
+</script>
