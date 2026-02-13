@@ -40,6 +40,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 	const selectedWord = () => selected.map(({ r, c }) => grid[r][c]).join('');
 	const isNeighbor = (a, b) => Math.abs(a.r - b.r) <= 1 && Math.abs(a.c - b.c) <= 1;
 
+	const ensureGlobalLayer = () => {
+		let layer = document.getElementById('global-celebration-layer');
+		if (!layer) {
+			layer = document.createElement('div');
+			layer.id = 'global-celebration-layer';
+			layer.className = 'pointer-events-none fixed inset-0 z-[120] overflow-hidden';
+			document.body.appendChild(layer);
+		}
+		return layer;
+	};
+
+	const clearGlobalLayer = () => {
+		const layer = document.getElementById('global-celebration-layer');
+		if (layer) layer.innerHTML = '';
+	};
+
 	const spawnBurst = (root, x, y) => {
 		const burst = document.createElement('div');
 		burst.className = 'burst';
@@ -48,47 +64,47 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 		root.appendChild(burst);
 
 		const colors = ['#ffd86b', '#ff8bb8', '#9de3ff', '#fff2b6', '#c9a8ff', '#7dffb8'];
-		for (let i = 0; i < 24; i += 1) {
+		for (let i = 0; i < 30; i += 1) {
 			const spark = document.createElement('span');
 			spark.className = 'spark';
-			spark.style.setProperty('--angle', `${(360 / 24) * i}deg`);
-			spark.style.setProperty('--distance', `${50 + Math.random() * 95}px`);
+			spark.style.setProperty('--angle', `${(360 / 30) * i}deg`);
+			spark.style.setProperty('--distance', `${65 + Math.random() * 130}px`);
 			spark.style.background = colors[Math.floor(Math.random() * colors.length)];
 			burst.appendChild(spark);
 		}
 
 		const flowerEmojis = ['🌸', '🌺', '🌼', '💐', '🌷'];
-		for (let i = 0; i < 18; i += 1) {
+		for (let i = 0; i < 28; i += 1) {
 			const petal = document.createElement('span');
 			petal.className = 'petal';
 			petal.textContent = flowerEmojis[Math.floor(Math.random() * flowerEmojis.length)];
 			petal.style.left = `${Math.random() * 100}%`;
-			petal.style.animationDelay = `${Math.random() * 0.2}s`;
-			petal.style.setProperty('--drift', `${-50 + Math.random() * 100}px`);
-			petal.style.fontSize = `${16 + Math.random() * 16}px`;
+			petal.style.animationDelay = `${Math.random() * 0.24}s`;
+			petal.style.setProperty('--drift', `${-75 + Math.random() * 150}px`);
+			petal.style.fontSize = `${18 + Math.random() * 22}px`;
 			root.appendChild(petal);
 		}
 
-		setTimeout(() => burst.remove(), 1400);
+		setTimeout(() => burst.remove(), 1700);
 	};
 
 	const launchCelebration = () => {
-		const root = app.querySelector('#celebration-layer');
-		if (!root) return;
+		const root = ensureGlobalLayer();
 		root.innerHTML = '';
-		spawnBurst(root, 20, 28);
-		spawnBurst(root, 50, 18);
-		spawnBurst(root, 80, 30);
+
+		for (let i = 0; i < 5; i += 1) {
+			spawnBurst(root, 10 + Math.random() * 80, 12 + Math.random() * 36);
+		}
 
 		let cycles = 0;
 		celebrationTimer = setInterval(() => {
-			spawnBurst(root, 10 + Math.random() * 80, 10 + Math.random() * 40);
+			spawnBurst(root, 5 + Math.random() * 90, 8 + Math.random() * 45);
 			cycles += 1;
-			if (cycles > 7 && celebrationTimer) {
+			if (cycles > 15 && celebrationTimer) {
 				clearInterval(celebrationTimer);
 				celebrationTimer = null;
 			}
-		}, 380);
+		}, 260);
 	};
 
 	const endDrag = () => {
@@ -97,19 +113,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 		const reversed = word.split('').reverse().join('');
 
 		for (const target of hiddenWords) {
-			if (word === target || reversed === target) {
-				found.add(target);
-			}
+			if (word === target || reversed === target) found.add(target);
 		}
 
 		selected = [];
-		if (found.size === hiddenWords.length && !showValentine && !celebrate) {
-			showValentine = true;
-		}
+		if (found.size === hiddenWords.length && !showValentine && !celebrate) showValentine = true;
 		render();
 	};
 
 	const openPlan = () => {
+		clearGlobalLayer();
 		window.location.href = '/plan';
 	};
 
@@ -121,6 +134,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 	};
 
 	const render = () => {
+		if (!celebrate) clearGlobalLayer();
 		if (!celebrate && celebrationTimer) {
 			clearInterval(celebrationTimer);
 			celebrationTimer = null;
@@ -130,7 +144,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 			app.innerHTML = `
 				<div class="relative overflow-hidden rounded-2xl border border-[#24140f]/10 bg-[#140d1c] p-6 text-center text-[#fff8f3]">
 					<div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,171,199,0.2),transparent_55%)]"></div>
-					<div id="celebration-layer" class="pointer-events-none absolute inset-0"></div>
 					<p class="relative z-10 text-2xl font-bold">Yay! 💖</p>
 					<p class="relative z-10 mt-2 text-sm text-[#ffe7df]">Du er min valentine!</p>
 					<button id="continue-btn" class="relative z-10 mt-5 w-full rounded-2xl bg-[#ffb199] py-4 text-lg font-semibold text-[#2f1e18]">Se planen</button>
@@ -169,8 +182,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 						${
 							foundList.length
 								? foundList
-										.map((word) => `<span class="rounded-full bg-[#effcf4] px-3 py-1 text-xs font-semibold text-[#175b37]">${word} ✓</span>`)
-										.join('')
+									.map((word) => `<span class="rounded-full bg-[#effcf4] px-3 py-1 text-xs font-semibold text-[#175b37]">${word} ✓</span>`)
+									.join('')
 								: '<span class="text-xs text-[#7d716b]">Ingen ord funnet enda</span>'
 						}
 					</div>
@@ -219,16 +232,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 			});
 		});
 
-		document.addEventListener(
-			'pointerup',
-			() => {
-				if (isDragging) {
-					isDragging = false;
-					endDrag();
-				}
-			},
-			{ once: true },
-		);
+		document.addEventListener('pointerup', () => {
+			if (isDragging) {
+				isDragging = false;
+				endDrag();
+			}
+		}, { once: true });
 	};
 
 	render();
@@ -244,43 +253,29 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 		position: absolute;
 		left: 0;
 		top: 0;
-		width: 5px;
-		height: 5px;
+		width: 6px;
+		height: 6px;
 		border-radius: 999px;
-		animation: spark 1s ease-out forwards;
+		animation: spark 1.2s ease-out forwards;
 		transform: rotate(var(--angle)) translateX(0);
-		box-shadow: 0 0 8px currentColor;
+		box-shadow: 0 0 12px currentColor;
 	}
 
 	.petal {
 		position: absolute;
 		top: -12%;
-		animation: petal-fall 2.6s cubic-bezier(0.22, 0.74, 0.25, 1) forwards;
-		filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
+		animation: petal-fall 3s cubic-bezier(0.22, 0.74, 0.25, 1) forwards;
+		filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
 	}
 
 	@keyframes spark {
-		0% {
-			opacity: 1;
-			transform: rotate(var(--angle)) translateX(0) scale(1);
-		}
-		100% {
-			opacity: 0;
-			transform: rotate(var(--angle)) translateX(var(--distance)) scale(0.2);
-		}
+		0% { opacity: 1; transform: rotate(var(--angle)) translateX(0) scale(1); }
+		100% { opacity: 0; transform: rotate(var(--angle)) translateX(var(--distance)) scale(0.15); }
 	}
 
 	@keyframes petal-fall {
-		0% {
-			transform: translate3d(0, 0, 0) rotate(0deg);
-			opacity: 0;
-		}
-		8% {
-			opacity: 1;
-		}
-		100% {
-			transform: translate3d(var(--drift), 120vh, 0) rotate(420deg);
-			opacity: 0;
-		}
+		0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+		8% { opacity: 1; }
+		100% { transform: translate3d(var(--drift), 120vh, 0) rotate(460deg); opacity: 0; }
 	}
 </style>
