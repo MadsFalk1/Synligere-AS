@@ -2,187 +2,163 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Minigame | Synligere" description="Dra bokstaver for å finne riktig setning.">
+<BaseLayout title="Minigame | Synligere" description="Word search: finn ordene elsker og deg.">
 	<section class="mx-auto w-full max-w-lg px-4 py-10">
 		<div class="rounded-3xl border border-[#24140f]/10 bg-white p-6 shadow-[0_14px_32px_-26px_rgba(52,34,24,0.45)] sm:p-8">
 			<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#b56449]">Minigame</p>
-			<h1 class="mt-2 text-2xl font-bold tracking-tight text-[#1a1a1a] sm:text-3xl">Dra bokstavene til riktig plass</h1>
-			<p class="mt-2 text-sm text-[#4d433e]">Finn den skjulte setningen ved å dra bokstavene.</p>
+			<h1 class="mt-2 text-2xl font-bold tracking-tight text-[#1a1a1a] sm:text-3xl">Word Search 💛</h1>
+			<p class="mt-2 text-sm text-[#4d433e]">Finn to ord i rutenettet ved å dra over bokstavene.</p>
 			<div id="minigame-app" class="mt-6"></div>
 		</div>
 	</section>
 </BaseLayout>
 
 <script>
-	const target = 'ELSKER DEG';
-	const pool = ['E', 'L', 'S', 'K', 'E', 'R', 'D', 'E', 'G', 'A', 'B', 'H', 'N', 'O', 'T'];
-	const slotsTemplate = target.split('').map((char) => (char === ' ' ? 'space' : null));
 	const app = document.getElementById('minigame-app');
+	if (!app) throw new Error('Mangler container');
 
-	if (!app) throw new Error('Minigame container mangler.');
+	const grid = [
+		['E', 'L', 'S', 'K', 'E', 'R'],
+		['A', 'V', 'N', 'T', 'R', 'M'],
+		['I', 'D', 'L', 'P', 'O', 'A'],
+		['U', 'E', 'B', 'J', 'K', 'G'],
+		['Y', 'G', 'Q', 'E', 'L', 'H'],
+		['C', 'W', 'X', 'Z', 'F', 'R'],
+	];
+	const targets = ['ELSKER', 'DEG'];
+	const found = new Set();
+	let selected = [];
+	let isDragging = false;
+	let asked = false;
+	let noScale = 1;
 
-	let slots = [...slotsTemplate];
-	let gaveUp = false;
-	let isSuccess = false;
-	let dragIndex = -1;
-	let ghost = null;
+	const cellKey = (r, c) => `${r}-${c}`;
 
-	const usedLetters = () => slots.filter((value) => value && value !== 'space');
-	const canUseLetter = (letter) => usedLetters().filter((char) => char === letter).length < pool.filter((char) => char === letter).length;
+	const selectedWord = () => selected.map(({ r, c }) => grid[r][c]).join('');
 
-	const checkComplete = () => {
-		const attempt = slots.map((char) => (char === 'space' ? ' ' : char || '')).join('');
-		if (attempt.length === target.length && attempt === target) {
-			isSuccess = true;
+	const isNeighbor = (a, b) => Math.abs(a.r - b.r) <= 1 && Math.abs(a.c - b.c) <= 1;
+
+	const endDrag = () => {
+		if (!selected.length) return;
+		const word = selectedWord();
+		const reversed = word.split('').reverse().join('');
+		for (const target of targets) {
+			if (word === target || reversed === target) {
+				found.add(target);
+			}
+		}
+		selected = [];
+		render();
+		if (found.size === targets.length && !asked) {
+			asked = true;
+			setTimeout(() => {
+				render();
+				launchFlowers();
+			}, 220);
 		}
 	};
 
 	const launchFlowers = () => {
-		const container = app.querySelector('#flowers');
-		if (!container) return;
+		const layer = app.querySelector('#flowers');
+		if (!layer) return;
 		const flowers = ['🌸', '🌺', '🌼', '💐'];
-		for (let i = 0; i < 28; i += 1) {
-			const el = document.createElement('span');
-			el.textContent = flowers[Math.floor(Math.random() * flowers.length)];
-			el.className = 'flower';
-			el.style.left = `${Math.random() * 100}%`;
-			el.style.animationDelay = `${Math.random() * 0.6}s`;
-			el.style.fontSize = `${18 + Math.random() * 16}px`;
-			container.appendChild(el);
-			setTimeout(() => el.remove(), 2200);
+		for (let i = 0; i < 30; i += 1) {
+			const f = document.createElement('span');
+			f.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+			f.className = 'flower';
+			f.style.left = `${Math.random() * 100}%`;
+			f.style.animationDelay = `${Math.random() * 0.5}s`;
+			f.style.fontSize = `${16 + Math.random() * 16}px`;
+			layer.appendChild(f);
+			setTimeout(() => f.remove(), 2200);
 		}
 	};
 
+	const openPlan = () => {
+		window.location.href = '/plan';
+	};
+
 	const render = () => {
-		if (gaveUp) {
+		if (asked) {
 			app.innerHTML = `
-				<div class="space-y-4 rounded-2xl border border-[#24140f]/10 bg-[#fff7f3] p-5 text-center">
-					<p class="text-lg font-semibold text-[#2a1b16]">Du ga opp 💛</p>
-					<p class="text-sm text-[#4d433e]">Riktig svar: <span class="font-bold">elsker deg</span></p>
-					<button id="continue-btn" class="w-full py-4 text-lg rounded-2xl bg-[#ffb199] font-semibold text-[#2f1e18]">Fortsett</button>
-				</div>
-			`;
-			app.querySelector('#continue-btn')?.addEventListener('click', () => {
-				window.location.href = '/plan';
-			});
-			return;
-		}
-
-		if (isSuccess) {
-			app.innerHTML = `
-				<div class="relative space-y-4 overflow-hidden rounded-2xl border border-[#24140f]/10 bg-[#effcf4] p-5 text-center">
+				<div class="relative overflow-hidden rounded-2xl border border-[#24140f]/10 bg-[#fff7f3] p-5 text-center">
 					<div id="flowers" class="pointer-events-none absolute inset-0"></div>
-					<p class="text-lg font-semibold text-[#175b37]">Riktig! 💚</p>
-					<p class="text-sm text-[#2f4b3d]">Du fant setningen.</p>
-					<button id="continue-btn" class="w-full py-4 text-lg rounded-2xl bg-[#ffb199] font-semibold text-[#2f1e18]">Fortsett</button>
+					<p class="text-lg font-semibold text-[#2a1b16]">Vil du være min valentine? 💌</p>
+					<div class="mt-5 flex items-center justify-center gap-3">
+						<button id="yes-btn" class="rounded-2xl bg-[#ffb199] px-6 py-3 text-lg font-semibold text-[#2f1e18]" style="transform: scale(${2 - noScale});">Ja</button>
+						<button id="no-btn" class="rounded-2xl border border-[#24140f]/20 bg-white px-6 py-3 text-lg font-semibold text-[#2a1b16]" style="transform: scale(${noScale});">Nei</button>
+					</div>
 				</div>
 			`;
-			launchFlowers();
-			app.querySelector('#continue-btn')?.addEventListener('click', () => {
-				window.location.href = '/plan';
+			app.querySelector('#yes-btn')?.addEventListener('click', openPlan);
+			app.querySelector('#no-btn')?.addEventListener('click', () => {
+				noScale = Math.max(0.45, noScale - 0.18);
+				render();
 			});
 			return;
 		}
 
+		const selectedSet = new Set(selected.map(({ r, c }) => cellKey(r, c)));
 		app.innerHTML = `
 			<div>
-				<p class="text-sm font-semibold uppercase tracking-[0.16em] text-[#8f4b35]">Setning</p>
-				<div class="mt-3 grid grid-cols-5 gap-2 sm:grid-cols-10">
-					${slots
-						.map((slot, index) =>
-							slot === 'space'
-								? `<div class="h-14 rounded-2xl border border-dashed border-transparent bg-transparent"></div>`
-								: `<button data-slot="${index}" class="slot h-14 rounded-2xl border border-[#24140f]/15 bg-[#fffaf7] text-xl font-semibold text-[#2a1b16]">${slot || ''}</button>`,
+				<div class="mb-4 rounded-2xl border border-[#24140f]/10 bg-[#fffaf7] p-3 text-sm text-[#4d433e]">
+					Finn: <span class="font-semibold ${found.has('ELSKER') ? 'text-[#175b37]' : 'text-[#2a1b16]'}">ELSKER</span> og
+					<span class="font-semibold ${found.has('DEG') ? 'text-[#175b37]' : 'text-[#2a1b16]'}">DEG</span>
+				</div>
+				<div class="grid grid-cols-6 gap-2 touch-none select-none">
+					${grid
+						.map((row, r) =>
+							row
+								.map((char, c) => {
+									const active = selectedSet.has(cellKey(r, c));
+									return `<button data-r="${r}" data-c="${c}" class="cell aspect-square rounded-xl border text-lg font-bold ${active ? 'border-[#ffb199] bg-[#fff1eb] text-[#b56449]' : 'border-[#24140f]/15 bg-white text-[#2a1b16]'}">${char}</button>`;
+								})
+								.join(''),
 						)
 						.join('')}
 				</div>
-
-				<p class="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-[#8f4b35]">Dra herfra</p>
-				<div class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-5">
-					${pool
-						.map((letter, index) => {
-							const disabled = !canUseLetter(letter);
-							return `<button data-letter="${letter}" data-index="${index}" class="drag-letter w-full py-4 text-lg rounded-2xl border border-[#24140f]/15 bg-white font-semibold text-[#2a1b16] ${disabled ? 'opacity-35' : ''}" ${disabled ? 'disabled' : ''}>${letter}</button>`;
-						})
-						.join('')}
-				</div>
-
-				<div class="mt-5 grid grid-cols-2 gap-3">
-					<button id="undo-btn" class="w-full py-4 text-lg rounded-2xl border border-[#24140f]/15 bg-white font-semibold text-[#2a1b16]">Angre</button>
-					<button id="give-up-btn" class="w-full py-4 text-lg rounded-2xl bg-[#2a1b16] font-semibold text-[#fffaf7]">Gi opp</button>
-				</div>
+				<p class="mt-4 text-center text-sm text-[#6a605a]">Dra over bokstavene i riktig rekkefølge.</p>
 			</div>
 		`;
 
-		app.querySelectorAll('.slot').forEach((slotButton) => {
-			slotButton.addEventListener('click', () => {
-				const index = Number(slotButton.getAttribute('data-slot'));
-				if (slots[index]) slots[index] = null;
+		app.querySelectorAll('.cell').forEach((cell) => {
+			cell.addEventListener('pointerdown', (event) => {
+				isDragging = true;
+				const r = Number(cell.getAttribute('data-r'));
+				const c = Number(cell.getAttribute('data-c'));
+				selected = [{ r, c }];
+				cell.setPointerCapture(event.pointerId);
 				render();
 			});
-		});
 
-		const placeLetter = (letter, slotIndex) => {
-			if (!Number.isInteger(slotIndex)) return;
-			if (slots[slotIndex] === 'space') return;
-			if (slots[slotIndex]) return;
-			slots[slotIndex] = letter;
-			checkComplete();
-			render();
-		};
-
-		const createGhost = (char, x, y) => {
-			const el = document.createElement('div');
-			el.textContent = char;
-			el.className = 'pointer-events-none fixed z-[999] flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border border-[#24140f]/20 bg-white text-xl font-bold text-[#2a1b16] shadow-lg';
-			el.style.left = `${x}px`;
-			el.style.top = `${y}px`;
-			document.body.appendChild(el);
-			return el;
-		};
-
-		app.querySelectorAll('.drag-letter').forEach((letterBtn) => {
-			letterBtn.addEventListener('pointerdown', (event) => {
-				dragIndex = Number(letterBtn.getAttribute('data-index'));
-				const letter = letterBtn.getAttribute('data-letter') || '';
-				ghost = createGhost(letter, event.clientX, event.clientY);
-				letterBtn.setPointerCapture(event.pointerId);
-			});
-
-			letterBtn.addEventListener('pointermove', (event) => {
-				if (!ghost || dragIndex < 0) return;
-				ghost.style.left = `${event.clientX}px`;
-				ghost.style.top = `${event.clientY}px`;
-			});
-
-			letterBtn.addEventListener('pointerup', (event) => {
-				const letter = letterBtn.getAttribute('data-letter') || '';
-				if (ghost) ghost.remove();
-				ghost = null;
-
-				const element = document.elementFromPoint(event.clientX, event.clientY);
-				const slot = element?.closest?.('.slot');
-				if (slot) {
-					placeLetter(letter, Number(slot.getAttribute('data-slot')));
+			cell.addEventListener('pointerenter', () => {
+				if (!isDragging) return;
+				const r = Number(cell.getAttribute('data-r'));
+				const c = Number(cell.getAttribute('data-c'));
+				const last = selected[selected.length - 1];
+				if (!last || !isNeighbor(last, { r, c })) return;
+				if (!selected.some((item) => item.r === r && item.c === c)) {
+					selected.push({ r, c });
+					render();
 				}
-				dragIndex = -1;
+			});
+
+			cell.addEventListener('pointerup', () => {
+				isDragging = false;
+				endDrag();
 			});
 		});
 
-		app.querySelector('#undo-btn')?.addEventListener('click', () => {
-			for (let i = slots.length - 1; i >= 0; i -= 1) {
-				if (slots[i] && slots[i] !== 'space') {
-					slots[i] = null;
-					break;
+		document.addEventListener(
+			'pointerup',
+			() => {
+				if (isDragging) {
+					isDragging = false;
+					endDrag();
 				}
-			}
-			render();
-		});
-
-		app.querySelector('#give-up-btn')?.addEventListener('click', () => {
-			gaveUp = true;
-			render();
-		});
+			},
+			{ once: true },
+		);
 	};
 
 	render();
@@ -191,7 +167,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <style>
 	.flower {
 		position: absolute;
-		top: -12%;
+		top: -10%;
 		animation: flower-fall 1.9s ease-in forwards;
 	}
 
@@ -204,7 +180,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 			opacity: 1;
 		}
 		100% {
-			transform: translate3d(-18px, 120vh, 0) rotate(260deg);
+			transform: translate3d(-12px, 120vh, 0) rotate(280deg);
 			opacity: 0;
 		}
 	}
