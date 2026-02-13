@@ -34,40 +34,61 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 	let celebrate = false;
 	let noScale = 1;
 	let yesScale = 1;
+	let celebrationTimer = null;
 
 	const cellKey = (r, c) => `${r}-${c}`;
 	const selectedWord = () => selected.map(({ r, c }) => grid[r][c]).join('');
 	const isNeighbor = (a, b) => Math.abs(a.r - b.r) <= 1 && Math.abs(a.c - b.c) <= 1;
 
+	const spawnBurst = (root, x, y) => {
+		const burst = document.createElement('div');
+		burst.className = 'burst';
+		burst.style.left = `${x}%`;
+		burst.style.top = `${y}%`;
+		root.appendChild(burst);
+
+		const colors = ['#ffd86b', '#ff8bb8', '#9de3ff', '#fff2b6', '#c9a8ff', '#7dffb8'];
+		for (let i = 0; i < 24; i += 1) {
+			const spark = document.createElement('span');
+			spark.className = 'spark';
+			spark.style.setProperty('--angle', `${(360 / 24) * i}deg`);
+			spark.style.setProperty('--distance', `${50 + Math.random() * 95}px`);
+			spark.style.background = colors[Math.floor(Math.random() * colors.length)];
+			burst.appendChild(spark);
+		}
+
+		const flowerEmojis = ['🌸', '🌺', '🌼', '💐', '🌷'];
+		for (let i = 0; i < 18; i += 1) {
+			const petal = document.createElement('span');
+			petal.className = 'petal';
+			petal.textContent = flowerEmojis[Math.floor(Math.random() * flowerEmojis.length)];
+			petal.style.left = `${Math.random() * 100}%`;
+			petal.style.animationDelay = `${Math.random() * 0.2}s`;
+			petal.style.setProperty('--drift', `${-50 + Math.random() * 100}px`);
+			petal.style.fontSize = `${16 + Math.random() * 16}px`;
+			root.appendChild(petal);
+		}
+
+		setTimeout(() => burst.remove(), 1400);
+	};
+
 	const launchCelebration = () => {
 		const root = app.querySelector('#celebration-layer');
 		if (!root) return;
-		const flowers = ['🌸', '🌺', '🌼', '💐', '🌷'];
-		const fireworks = ['✨', '🎆', '🎇', '💥'];
+		root.innerHTML = '';
+		spawnBurst(root, 20, 28);
+		spawnBurst(root, 50, 18);
+		spawnBurst(root, 80, 30);
 
-		for (let i = 0; i < 80; i += 1) {
-			const node = document.createElement('span');
-			node.textContent = flowers[Math.floor(Math.random() * flowers.length)];
-			node.className = 'flower-piece';
-			node.style.left = `${Math.random() * 100}%`;
-			node.style.animationDelay = `${Math.random() * 0.8}s`;
-			node.style.fontSize = `${14 + Math.random() * 20}px`;
-			node.style.setProperty('--drift', `${-40 + Math.random() * 80}px`);
-			root.appendChild(node);
-			setTimeout(() => node.remove(), 3200);
-		}
-
-		for (let i = 0; i < 24; i += 1) {
-			const node = document.createElement('span');
-			node.textContent = fireworks[Math.floor(Math.random() * fireworks.length)];
-			node.className = 'firework-piece';
-			node.style.left = `${10 + Math.random() * 80}%`;
-			node.style.top = `${8 + Math.random() * 42}%`;
-			node.style.animationDelay = `${Math.random() * 0.9}s`;
-			node.style.fontSize = `${22 + Math.random() * 18}px`;
-			root.appendChild(node);
-			setTimeout(() => node.remove(), 2400);
-		}
+		let cycles = 0;
+		celebrationTimer = setInterval(() => {
+			spawnBurst(root, 10 + Math.random() * 80, 10 + Math.random() * 40);
+			cycles += 1;
+			if (cycles > 7 && celebrationTimer) {
+				clearInterval(celebrationTimer);
+				celebrationTimer = null;
+			}
+		}, 380);
 	};
 
 	const endDrag = () => {
@@ -100,9 +121,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 	};
 
 	const render = () => {
+		if (!celebrate && celebrationTimer) {
+			clearInterval(celebrationTimer);
+			celebrationTimer = null;
+		}
+
 		if (celebrate) {
 			app.innerHTML = `
-				<div class="relative overflow-hidden rounded-2xl border border-[#24140f]/10 bg-[#1e1320] p-6 text-center text-[#fff8f3]">
+				<div class="relative overflow-hidden rounded-2xl border border-[#24140f]/10 bg-[#140d1c] p-6 text-center text-[#fff8f3]">
+					<div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,171,199,0.2),transparent_55%)]"></div>
 					<div id="celebration-layer" class="pointer-events-none absolute inset-0"></div>
 					<p class="relative z-10 text-2xl font-bold">Yay! 💖</p>
 					<p class="relative z-10 mt-2 text-sm text-[#ffe7df]">Du er min valentine!</p>
@@ -208,44 +235,51 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </script>
 
 <style>
-	.flower-piece {
+	.burst {
 		position: absolute;
-		top: -14%;
-		animation: flower-fall 2.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
-		filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
+		transform: translate(-50%, -50%);
 	}
 
-	.firework-piece {
+	.spark {
 		position: absolute;
-		animation: firework-burst 1.3s ease-out forwards;
-		text-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+		left: 0;
+		top: 0;
+		width: 5px;
+		height: 5px;
+		border-radius: 999px;
+		animation: spark 1s ease-out forwards;
+		transform: rotate(var(--angle)) translateX(0);
+		box-shadow: 0 0 8px currentColor;
 	}
 
-	@keyframes flower-fall {
+	.petal {
+		position: absolute;
+		top: -12%;
+		animation: petal-fall 2.6s cubic-bezier(0.22, 0.74, 0.25, 1) forwards;
+		filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
+	}
+
+	@keyframes spark {
+		0% {
+			opacity: 1;
+			transform: rotate(var(--angle)) translateX(0) scale(1);
+		}
+		100% {
+			opacity: 0;
+			transform: rotate(var(--angle)) translateX(var(--distance)) scale(0.2);
+		}
+	}
+
+	@keyframes petal-fall {
 		0% {
 			transform: translate3d(0, 0, 0) rotate(0deg);
 			opacity: 0;
 		}
-		10% {
+		8% {
 			opacity: 1;
 		}
 		100% {
-			transform: translate3d(var(--drift), 125vh, 0) rotate(480deg);
-			opacity: 0;
-		}
-	}
-
-	@keyframes firework-burst {
-		0% {
-			transform: scale(0.2);
-			opacity: 0;
-		}
-		40% {
-			transform: scale(1.4);
-			opacity: 1;
-		}
-		100% {
-			transform: scale(0.9);
+			transform: translate3d(var(--drift), 120vh, 0) rotate(420deg);
 			opacity: 0;
 		}
 	}
